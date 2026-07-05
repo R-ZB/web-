@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>あなたのソ連アーケードゲームを探す</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts: 选择了有些复古感且易读的字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            /* 使用 Noto Sans JP 作为日文字体 */
+            font-family: 'Noto Sans JP', sans-serif;
+            /* 设置用户提供的背景图片 */
+            background-image: url('https://raw.githubusercontent.com/R-ZB/web-/main/bg.png');
+            background-size: cover; /* 背景自动等比缩放铺满屏幕 */
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed; /* 背景固定，滚动时不跟着移动 */
+            color: #ffffff; /* 全局默认字体颜色设为白色 */
+            /* 移除了之前的暗色遮罩，让背景原图完整显示 */
+        }
+        h1, h2, h3, .retro-font {
+            /* 统一标题字体并加粗 */
+            font-family: 'Noto Sans JP', sans-serif;
+            font-weight: 700;
+        }
+        
+        /* 隐藏不同部分的类，用于页面切换 */
+        .hidden-section {
+            display: none !important;
+        }
+
+        /* 简单的淡入动画 */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* 选项按钮悬停效果 */
+        .option-btn {
+            transition: all 0.3s ease;
+        }
+        /* 针对触摸设备的优化：增加点击反馈 */
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+        /* 仅在支持鼠标悬停的设备上应用悬停效果：黑白主题悬停发光 */
+        @media (hover: hover) {
+            .option-btn:hover {
+                transform: scale(1.02);
+                box-shadow: 0 4px 15px rgba(255, 255, 255, 0.4);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative">
+
+    <!-- 引导页 (Intro Section) -->
+    <div id="intro-section" class="bg-black/85 backdrop-blur-md p-8 md:p-12 rounded-3xl text-center max-w-2xl w-full border border-gray-800 shadow-2xl">
+        <h1 class="text-3xl md:text-4xl mb-6 tracking-widest text-white leading-tight">あなたのソ連アーケードゲームを探す</h1>
+        <p class="text-gray-400 mb-10 leading-relaxed text-sm md:text-base">いくつかの簡単な質問に答えて、あなたにぴったりのレトロアーケードマシンを見つけましょう。</p>
+        <button onclick="startQuiz()" class="bg-white text-black font-bold py-4 px-12 rounded-full hover:bg-gray-300 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.3)]">テストを開始する</button>
+    </div>
+
+    <!-- 测试页 (Quiz Section) -->
+    <div id="quiz-section" class="hidden-section bg-black/80 backdrop-blur-md p-8 md:p-12 rounded-3xl max-w-2xl w-full border border-gray-800 shadow-2xl transition-all">
+        <div id="question-counter" class="text-gray-400 text-sm mb-6 tracking-widest uppercase font-bold">質問 1</div>
+        <h2 id="question-text" class="text-2xl md:text-3xl mb-10 leading-snug text-white font-bold"></h2>
+        <div id="options-container" class="flex flex-col gap-4">
+            <!-- 选项按钮由 JS 动态生成 -->
+        </div>
+    </div>
+
+    <!-- 结果页 (Result Section) - 全新参考博物馆陈列风格设计 -->
+    <div id="result-section" class="hidden-section bg-black/85 backdrop-blur-xl p-6 md:p-10 rounded-3xl max-w-6xl w-full border border-gray-700 shadow-2xl flex flex-col">
+        <div class="border-b border-gray-600 pb-4 mb-8 flex justify-between items-end">
+            <h2 class="text-xl md:text-2xl text-gray-300 tracking-widest uppercase">MATCH FOUND // アーケードマシン発見</h2>
+            <span class="text-xs text-gray-500 font-mono">ID: SOV-ARC-01</span>
+        </div>
+        
+        <!-- 机器名称 (置顶) -->
+        <h3 id="result-name" class="text-3xl md:text-5xl text-white font-bold mb-8 tracking-wider text-center lg:text-left"></h3>
+
+        <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
+            
+            <!-- 左侧/上方：机器图片展示区 (类似官网侧重图片) -->
+            <div class="w-full lg:w-1/2 flex flex-col items-center text-center">
+                <div class="relative group mb-8 w-full max-w-lg">
+                    <!-- 使用原始图片，去除过度修饰，呈现复古真实感 -->
+                    <img id="result-image" src="" alt="Machine" class="relative w-full h-auto object-cover rounded-xl border border-gray-700 shadow-[0_0_30px_rgba(255,255,255,0.05)] bg-gray-900">
+                    <div class="absolute bottom-3 right-3 bg-black/80 px-3 py-1 text-xs text-white rounded font-mono border border-gray-600">15 коп.</div>
+                </div>
+            </div>
+
+            <!-- 右侧/下方：信息、语音、二维码与操作 (横向整合排版) -->
+            <div class="w-full lg:w-1/2 flex flex-col justify-between h-full">
+                
+                <!-- 内部横向排版：声音 - 文字 - 二维码 -->
+                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-10">
+                    
+                    <!-- 声音 UI (小尺寸，放在文字旁) -->
+                    <div class="w-full sm:w-1/4 flex flex-col items-center">
+                        <p class="text-gray-500 text-[10px] mb-2 tracking-widest uppercase">Audio Log</p>
+                        <div class="p-2 border border-gray-700 bg-gray-900/50 rounded-lg w-full flex justify-center hover:bg-gray-800 transition-colors">
+                            <img src="https://raw.githubusercontent.com/R-ZB/web-/main/voice.png" alt="Voice UI" class="w-full max-w-[80px] object-contain opacity-90 hover:opacity-100 transition-opacity">
+                        </div>
+                    </div>
+
+                    <!-- 介绍文本 (主要区域) -->
+                    <div class="w-full sm:w-2/4">
+                        <div class="w-12 h-0.5 bg-gray-500 mb-4 hidden sm:block"></div>
+                        <p id="result-desc" class="text-gray-300 text-sm md:text-base leading-relaxed text-justify"></p>
+                    </div>
+
+                    <!-- 二维码 (小尺寸，放在文字旁) -->
+                    <div class="w-full sm:w-1/4 flex flex-col items-center">
+                        <p class="text-gray-500 text-[10px] mb-2 tracking-widest uppercase">Scan to Mobile</p>
+                        <div class="p-2 border border-gray-700 bg-gray-900/50 rounded-lg w-full flex justify-center hover:bg-gray-800 transition-colors">
+                            <img src="https://placehold.co/100x100/111/fff?text=QR" alt="QR Code Placeholder" class="w-full max-w-[80px] aspect-square object-cover rounded opacity-80 hover:opacity-100 transition-opacity">
+                        </div>
+                    </div>
+
+                </div>
+                
+                <!-- 操作按钮 (底部) -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start w-full border-t border-gray-800 pt-8 mt-auto">
+                    <a id="result-url" href="#" target="_blank" class="inline-flex items-center justify-center bg-white text-black font-bold py-3 px-8 rounded-full hover:bg-gray-300 hover:scale-105 transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.2)] text-sm">
+                        <span>公式サイトで体験する</span>
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                    <button onclick="resetQuiz()" class="inline-block bg-transparent text-white border border-white font-bold py-3 px-8 rounded-full hover:bg-white hover:text-black transition-all duration-300 text-sm">
+                        もう一度プレイ
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // 替换为转换后的真实图片原始链接 (raw.githubusercontent.com)
+        const machines = {
+            'interceptor': {
+                name: 'インターセプター',
+                description: '戦闘機の操縦士となり、迫り来る敵機を撃墜するフライトシューティングゲーム。ジョイスティックで照準を合わせ、正確なタイミングでトリガーを引く。画面の奥から手前へと向かってくる敵機のスピード感と、撃墜時の視覚的な爆発エフェクトが当時のプレイヤーを熱狂させました。',
+                url: 'https://15kop.ru/perekhvatchik-1986',
+                image: 'https://raw.githubusercontent.com/R-ZB/web-/main/picture/INTERCEPTORphoto.webp'
+            },
+            'morskoy_boi': {
+                name: '海戦',
+                description: 'ソ連時代に最も愛された伝説的なアーケードゲーム。プレイヤーは潜水艦のペリスコープ（潜望鏡）を覗き込み、水平線上を行き交う敵の艦船を魚雷で狙い撃ちます。魚雷の軌跡を表現する光の列と、目標に命中した際のリアルな爆発音が特徴。待ちの姿勢と正確な計算が求められる名機です。',
+                url: 'https://15kop.ru/morskoi-boi-1974',
+                image: 'https://raw.githubusercontent.com/R-ZB/web-/main/picture/SEA_.webp'
+            },
+            'sniper': {
+                name: 'スナイパー',
+                description: '本物のライフルに似た精巧なコントローラーを使用し、限られた弾数で標的を正確に撃ち抜く射撃シミュレーター。静止した的だけでなく、動く的を狙うモードもあり、プレイヤーの集中力と反射神経が試されます。ミリタリーテイストの強い硬派なゲームです。',
+                url: 'https://15kop.ru/snaiper-1983',
+                image: 'https://raw.githubusercontent.com/R-ZB/web-/main/picture/shootphoto.webp'
+            },
+            'repka': {
+                name: '大根抜き',
+                description: 'ロシアの有名な民話「おおきなかぶ」をモチーフにした、筋力測定マシン。ハンドルを両手で力いっぱい引き上げることで、あなたの「力」を測定します。結果はデジタル数値だけでなく、物語に登場するキャラクターに例えられて表示されるユニークな体験が楽しめます。',
+                url: 'https://15kop.ru/repka-1990',
+                image: 'https://raw.githubusercontent.com/R-ZB/web-/main/picture/TURNIP.webp'
+            },
+            'magistral': {
+                name: 'ハイウェイ',
+                description: 'ステアリングを握り、交通量の多い夜の高速道路を猛スピードで駆け抜けるレースゲーム。他の車との衝突を避けながら、制限時間内にどれだけの距離を走破できるかを競います。シンプルなグラフィックながら、徐々に上がるスピードと、接触スレスレで回避するスリルが魅力です。',
+                url: 'https://15kop.ru/magistral-1990',
+                image: 'https://raw.githubusercontent.com/R-ZB/web-/main/picture/HIGHWAY.webp'
+            },
+            'icebreaker': {
+                name: '砕氷船',
+                description: '過酷な北極海を舞台に、強力な砕氷船を操作するゲーム。流氷や巨大な氷山を避け、時には氷を砕きながら、目的地を目指して船を進めます。スピードよりも、障害物を見極める判断力と正確な操舵技術が求められる、ソ連らしいテーマを持った独特なアクションゲームです。',
+                url: 'https://15kop.ru/ledokol-1987',
+                image: 'https://raw.githubusercontent.com/R-ZB/web-/main/picture/ICE.webp'
+            }
+        };
+
+        // 使用节点树结构来处理复杂的跳转逻辑
+        const quizNodes = {
+            'q1': {
+                question: "Q1：あなたは「対抗感」のある体験をしたいですか？",
+                options: [
+                    { text: "はい", nextNode: 'q2' },
+                    { text: "いいえ", nextNode: 'q3' }
+                ]
+            },
+            'q2': {
+                question: "Q2：あなたは「正確な狙い」を重視しますか？",
+                options: [
+                    { text: "はい", nextNode: 'q4' },
+                    { text: "いいえ", resultId: 'interceptor' }
+                ]
+            },
+            'q4': {
+                question: "Q4：あなたは身を隠し、タイミングを待つ戦い方が好きですか？",
+                options: [
+                    { text: "はい", resultId: 'morskoy_boi' },
+                    { text: "いいえ", resultId: 'sniper' }
+                ]
+            },
+            'q3': {
+                question: "Q3：あなたは「移動しながらの操作」が好きですか？",
+                options: [
+                    { text: "はい", nextNode: 'q5' },
+                    { text: "いいえ", resultId: 'repka' }
+                ]
+            },
+            'q5': {
+                question: "Q5：あなたはスピード感のある刺激的な体験が好きですか？",
+                options: [
+                    { text: "はい", resultId: 'magistral' },
+                    { text: "いいえ", resultId: 'icebreaker' }
+                ]
+            }
+        };
+
+        const introSection = document.getElementById('intro-section');
+        const quizSection = document.getElementById('quiz-section');
+        const resultSection = document.getElementById('result-section');
+        
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const questionCounter = document.getElementById('question-counter');
+
+        const resultName = document.getElementById('result-name');
+        const resultDesc = document.getElementById('result-desc');
+        const resultUrl = document.getElementById('result-url');
+        const resultImage = document.getElementById('result-image');
+
+        let currentNodeId = 'q1';
+        let stepCount = 1;
+
+        // 开始测试
+        function startQuiz() {
+            introSection.classList.add('hidden-section');
+            quizSection.classList.remove('hidden-section');
+            currentNodeId = 'q1';
+            stepCount = 1;
+            loadNode();
+        }
+
+        // 加载当前节点题目
+        function loadNode() {
+            const currentNode = quizNodes[currentNodeId];
+            questionText.textContent = currentNode.question;
+            
+            // 因为分支路径长度不同，不再显示总数，只显示当前步数
+            questionCounter.textContent = `質問 ${stepCount}`;
+            
+            optionsContainer.innerHTML = '';
+
+            // 生成选项按钮
+            currentNode.options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'option-btn bg-black hover:bg-white hover:text-black text-white font-bold py-4 sm:py-6 px-4 sm:px-6 border-2 border-white rounded-xl shadow-md text-left transition duration-300 w-full text-sm sm:text-base leading-snug';
+                button.textContent = option.text;
+                
+                button.onclick = () => {
+                    if (option.nextNode) {
+                        // 进入下一个问题节点
+                        currentNodeId = option.nextNode;
+                        stepCount++;
+                        loadNode();
+                    } else if (option.resultId) {
+                        // 达到终点，显示结果
+                        showResult(option.resultId);
+                    }
+                };
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        // 展示结果
+        function showResult(resultId) {
+            quizSection.classList.add('hidden-section');
+            resultSection.classList.remove('hidden-section');
+
+            const recommendedMachine = machines[resultId];
+
+            // 更新结果页 UI
+            resultName.textContent = recommendedMachine.name;
+            resultDesc.textContent = recommendedMachine.description;
+            resultUrl.href = recommendedMachine.url;
+            resultImage.src = recommendedMachine.image;
+            resultImage.alt = recommendedMachine.name;
+        }
+
+        // 重置测试
+        function resetQuiz() {
+            resultSection.classList.add('hidden-section');
+            introSection.classList.remove('hidden-section');
+        }
+    </script>
+</body>
+</html>
